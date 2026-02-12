@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: namu_ai_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-namu}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-namu123}
+      POSTGRES_DB: ${DB_NAME:-namu_ai}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./seed.sql:/docker-entrypoint-initdb.d/seed.sql
+
+volumes:
+  postgres_data:
