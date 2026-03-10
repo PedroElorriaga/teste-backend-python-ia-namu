@@ -17,3 +17,4 @@ python_version = "3.11"
 
 [scripts]
 start = "uvicorn src.main.main:app --reload"
+test = "pytest tests/. -v"
