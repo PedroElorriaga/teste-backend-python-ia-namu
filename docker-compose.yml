@@ -6,11 +6,11 @@ services:
     container_name: namu_ai_db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USER:-namu}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-namu123}
-      POSTGRES_DB: ${DB_NAME:-namu_ai}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "${DB_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./seed.sql:/docker-entrypoint-initdb.d/seed.sql
