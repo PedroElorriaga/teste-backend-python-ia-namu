@@ -6,17 +6,19 @@ class RecommendationCreateRequest(BaseModel):
     user_id: int = Field(..., examples=[1])
     additional_info: Optional[str] = Field(None, examples=["Estou com dor de cabeça"])
 
+
+class ActivityResponse(BaseModel):
+    name: str = Field(..., examples=["Caminhada"])
+    description: str = Field(..., examples=["Caminhada leve de 30 minutos"])
+    duration: float = Field(..., examples=[30])
+    category: str = Field(..., examples=["Cardio"])
+
+
 class RecommendationCreateResponse(BaseModel):
-    response: dict = Field(..., examples=[{
-        "activities": [{
-            "name": "Caminhada",
-            "description": "Caminhada leve de 30 minutos",
-            "duration": 30,
-            "category": "Cardio"
-        }],
-        "reasoning": "A caminhada leve é uma atividade de baixo impacto que pode ajudar a melhorar a saúde cardiovascular, aumentar a resistência e promover o bem-estar geral. É uma ótima opção para iniciantes ou para aqueles que buscam uma atividade física suave.",
-        "precautions": "Certifique-se de usar calçados confortáveis e adequados para caminhada. Mantenha-se hidratado e evite caminhar em condições climáticas extremas. Se sentir dor ou desconforto, pare a atividade e consulte um profissional de saúde."
-    }])
+    activities: list[ActivityResponse]
+    reasoning: str = Field(..., examples=["A atividade foi escolhida pelo perfil do usuario."])
+    precautions: str = Field(..., examples=["Evite impacto por causa das restricoes informadas."])
+
 
 class RecommendationResponse(BaseModel):
     message: str = Field(..., examples=["Recomendações geradas com sucesso"])

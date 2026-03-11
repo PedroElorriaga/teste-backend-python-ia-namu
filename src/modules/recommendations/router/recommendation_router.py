@@ -19,7 +19,9 @@ async def create_recommendation(request: RecommendationCreateRequest, db: Sessio
     recommendation_controller = RecommendationController(recommendation_repository)
     recommendation = recommendation_controller.create_recommendation(request.model_dump())
 
-    return RecommendationResponse(response={
+    return RecommendationResponse(
+        message="Recomendação criada",
+        response={
         "activities": [{
             "name": recommendation.name,
             "description": recommendation.description,

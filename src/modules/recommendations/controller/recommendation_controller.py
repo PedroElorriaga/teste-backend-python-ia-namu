@@ -10,10 +10,10 @@ class RecommendationController:
 
         return self.recommendation_repository.create_recommendation(
             user_id=recommendation_dto.user_id,
-            name=request['name'],
-            description=request['description'],
-            duration=request['duration'],
-            category=request['category'],
-            reasoning=request['reasoning'],
-            precautions=request['precautions']
+            name="Teste",
+            description="Recomendação de teste",
+            duration=30.0,
+            category="Exercício",
+            reasoning="Recomendação gerada para teste",
+            precautions="Sem precauções específicas"
         )
