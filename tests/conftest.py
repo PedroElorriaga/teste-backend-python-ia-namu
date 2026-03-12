@@ -30,6 +30,8 @@ def test_client(fake_db_session):
     app.dependency_overrides.clear()
 
 
+# ── User fixtures ──
+
 @pytest.fixture
 def valid_user_data():
     """Sample valid user data for testing."""
@@ -63,5 +65,61 @@ def sample_user(valid_user_data):
         goals=valid_user_data["goals"],
         restrictions=valid_user_data["restrictions"],
         experience_level=valid_user_data["experience_level"],
+        created_at=datetime.now(timezone.utc),
+    )
+
+
+# ── Recommendation fixtures ──
+
+@pytest.fixture
+def valid_recommendation_data():
+    """Sample valid recommendation request data."""
+    return {
+        "user_id": 1,
+        "additional_info": "Estou com dor de cabeça"
+    }
+
+
+@pytest.fixture
+def valid_recommendation_data_no_info():
+    """Sample recommendation request without additional_info."""
+    return {
+        "user_id": 1
+    }
+
+
+@pytest.fixture
+def sample_recommendation():
+    """Sample recommendation ORM-like object."""
+    return SimpleNamespace(
+        id=1,
+        user_id=1,
+        name="Teste",
+        description="Recomendação de teste",
+        duration=30.0,
+        category="Exercício",
+        reasoning="Recomendação gerada para teste",
+        precautions="Sem precauções específicas",
+        created_at=datetime.now(timezone.utc),
+    )
+
+
+@pytest.fixture
+def valid_feedback_data():
+    """Sample valid feedback request data."""
+    return {
+        "rating": 4,
+        "comment": "Gostei muito da recomendação!"
+    }
+
+
+@pytest.fixture
+def sample_feedback():
+    """Sample recommendation feedback ORM-like object."""
+    return SimpleNamespace(
+        id=1,
+        recommendation_id=1,
+        rating=4,
+        comment="Gostei muito da recomendação!",
         created_at=datetime.now(timezone.utc),
     )

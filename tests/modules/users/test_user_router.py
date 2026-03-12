@@ -131,55 +131,104 @@ class TestUserRouter:
 
         assert response.status_code == 422
 
-    def test_get_all_users_empty(self, monkeypatch, test_client):
-        """Test GET /users returns empty list when no users exist."""
+    def test_get_user_recommendations_success(self, monkeypatch, test_client):
+        """Test GET /users/{user_id}/recommendations returns recommendation history."""
         monkeypatch.setattr(
-            "src.modules.users.router.user_router.UserController.get_all_users",
-            lambda self: [],
-        )
-
-        response = test_client.get("/users/")
-
-        assert response.status_code == 200
-        data = response.json()
-
-        assert isinstance(data, list)
-        assert len(data) == 0
-
-    def test_get_all_users_after_creation(self, monkeypatch, test_client, valid_user_data):
-        """Test GET /users returns created users."""
-        second_user_data = valid_user_data.copy()
-        second_user_data["name"] = "Outro Usuario"
-        monkeypatch.setattr(
-            "src.modules.users.router.user_router.UserController.get_all_users",
-            lambda self: [
+            "src.modules.users.router.user_router.RecommendationController.get_all_recommendations_by_user_id",
+            lambda self, user_id: [
                 {
-                    "id": 1,
-                    "name": valid_user_data["name"],
-                    "age": valid_user_data["age"],
-                    "goals": valid_user_data["goals"],
-                    "restrictions": valid_user_data["restrictions"],
-                    "experience_level": valid_user_data["experience_level"],
-                },
-                {
-                    "id": 2,
-                    "name": second_user_data["name"],
-                    "age": second_user_data["age"],
-                    "goals": second_user_data["goals"],
-                    "restrictions": second_user_data["restrictions"],
-                    "experience_level": second_user_data["experience_level"],
+                    "name": "Caminhada",
+                    "description": "Caminhada leve de 30 minutos",
+                    "duration": 30.0,
+                    "category": "Cardio",
+                    "reasoning": "Perfil do usuario",
+                    "precautions": "Nenhuma",
                 },
             ],
         )
 
-        response = test_client.get("/users/")
+        response = test_client.get("/users/1/recommendations")
 
         assert response.status_code == 200
-        users = response.json()
+        data = response.json()
+        assert data["message"] == "Histórico de recomendações do usuário 1"
+        assert len(data["recommendations"]) == 1
+        assert data["recommendations"][0]["name"] == "Caminhada"
+        assert data["recommendations"][0]["duration"] == 30.0
 
-        assert len(users) == 2
-        assert users[0]["name"] == valid_user_data["name"]
-        assert users[1]["name"] == second_user_data["name"]
+    def test_get_user_recommendations_empty(self, monkeypatch, test_client):
+        """Test GET /users/{user_id}/recommendations returns empty list when no recommendations."""
+        monkeypatch.setattr(
+            "src.modules.users.router.user_router.RecommendationController.get_all_recommendations_by_user_id",
+            lambda self, user_id: [],
+        )
+
+        response = test_client.get("/users/1/recommendations")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["recommendations"] == []
+
+    def test_get_user_recommendations_multiple(self, monkeypatch, test_client):
+        """Test GET /users/{user_id}/recommendations returns multiple recommendations."""
+        monkeypatch.setattr(
+            "src.modules.users.router.user_router.RecommendationController.get_all_recommendations_by_user_id",
+            lambda self, user_id: [
+                {
+                    "name": "Caminhada",
+                    "description": "Caminhada leve",
+                    "duration": 30.0,
+                    "category": "Cardio",
+                    "reasoning": "Perfil do usuario",
+                    "precautions": "Nenhuma",
+                },
+                {
+                    "name": "Yoga",
+                    "description": "Yoga relaxante",
+                    "duration": 45.0,
+                    "category": "Flexibilidade",
+                    "reasoning": "Reduz estresse",
+                    "precautions": "Evite posturas avançadas",
+                },
+            ],
+        )
+
+        response = test_client.get("/users/2/recommendations")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data["recommendations"]) == 2
+        assert data["message"] == "Histórico de recomendações do usuário 2"
+
+    def test_get_user_recommendations_response_structure(self, monkeypatch, test_client):
+        """Test GET /users/{user_id}/recommendations response has correct structure."""
+        monkeypatch.setattr(
+            "src.modules.users.router.user_router.RecommendationController.get_all_recommendations_by_user_id",
+            lambda self, user_id: [
+                {
+                    "name": "Meditação",
+                    "description": "Meditação guiada",
+                    "duration": 15.0,
+                    "category": "Mindfulness",
+                    "reasoning": "Melhora concentração",
+                    "precautions": "Nenhuma",
+                },
+            ],
+        )
+
+        response = test_client.get("/users/5/recommendations")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "message" in data
+        assert "recommendations" in data
+        rec = data["recommendations"][0]
+        assert "name" in rec
+        assert "description" in rec
+        assert "duration" in rec
+        assert "category" in rec
+        assert "reasoning" in rec
+        assert "precautions" in rec
 
     def test_post_create_user_with_multiple_goals(self, monkeypatch, test_client):
         """Test creating user with multiple goals."""
@@ -260,17 +309,6 @@ class TestUserRouter:
             assert response.status_code == 201
             data = response.json()
             assert data["user"]["experience_level"] == level
-
-    def test_router_endpoint_exists(self, monkeypatch, test_client):
-        """Test that /users endpoint exists and responds."""
-        monkeypatch.setattr(
-            "src.modules.users.router.user_router.UserController.get_all_users",
-            lambda self: [],
-        )
-
-        response = test_client.get("/users/")
-
-        assert response.status_code == 200
 
     def test_post_create_user_response_contains_message(self, monkeypatch, test_client, valid_user_data):
         """Test that POST response from router includes message."""
