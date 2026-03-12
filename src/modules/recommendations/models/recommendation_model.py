@@ -14,3 +14,13 @@ class Recommendation(Base):
     reasoning = Column(String(255), nullable=False)
     precautions = Column(String(255), nullable=False)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
+
+
+class RecommendationFeedback(Base):
+    __tablename__ = 'recommendation_feedbacks'
+
+    id = Column(Integer, primary_key=True)
+    recommendation_id = Column(Integer, ForeignKey('recommendations.id'), nullable=False)
+    rating = Column(Integer, nullable=False)
+    comment = Column(String(255), nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
