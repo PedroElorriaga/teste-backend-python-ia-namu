@@ -12,7 +12,12 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    title="Namu API",
+    description="API para gerenciamento de usuários e recomendações de atividades físicas personalizadas.",
+    version="1.0.0",
+    lifespan=lifespan
+)
 
 
 app.include_router(user_router.router)
