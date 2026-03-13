@@ -46,4 +46,4 @@ jobs:
 
           SQLALCHEMY_DATABASE_URI: postgresql+psycopg://postgres:postgres@localhost:5432/test_db
 
-        run: pipenv run pytest -s tests/. -v
+        run: pipenv run tests
