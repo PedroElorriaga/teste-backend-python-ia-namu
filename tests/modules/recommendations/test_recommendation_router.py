@@ -9,19 +9,21 @@ class TestRecommendationRouter:
 
     def test_post_create_recommendation_success(self, monkeypatch, test_client, valid_recommendation_data):
         """Test POST /recommendations/ successfully creates a recommendation."""
-        fake_rec = SimpleNamespace(
-            id=1, user_id=1, name="Teste",
-            description="Recomendação de teste", duration=30.0,
-            category="Exercício", reasoning="Recomendação gerada para teste",
-            precautions="Sem precauções específicas",
-            created_at=datetime.now(timezone.utc),
-        )
+        fake_payload = {
+            "activities": [
+                {"name": "Teste", "description": "Recomendação de teste",
+                 "duration": 30.0, "category": "Exercício"}
+            ],
+            "reasoning": "Recomendação gerada para teste",
+            "precautions": "Sem precauções específicas",
+        }
         monkeypatch.setattr(
-            "src.modules.recommendations.router.recommendation_router.RecommendationController.create_recommendation",
-            lambda self, request: fake_rec,
+            "src.modules.recommendations.router.recommendation_router.RecommendationController.create_recommendations",
+            lambda self, request: fake_payload,
         )
 
-        response = test_client.post("/recommendations/", json=valid_recommendation_data)
+        response = test_client.post(
+            "/recommendations/", json=valid_recommendation_data)
 
         assert response.status_code == 201
         data = response.json()
@@ -36,11 +38,12 @@ class TestRecommendationRouter:
     def test_post_create_recommendation_user_not_found(self, monkeypatch, test_client, valid_recommendation_data):
         """Test POST /recommendations/ returns 404 when user not found."""
         monkeypatch.setattr(
-            "src.modules.recommendations.router.recommendation_router.RecommendationController.create_recommendation",
+            "src.modules.recommendations.router.recommendation_router.RecommendationController.create_recommendations",
             lambda self, request: None,
         )
 
-        response = test_client.post("/recommendations/", json=valid_recommendation_data)
+        response = test_client.post(
+            "/recommendations/", json=valid_recommendation_data)
 
         assert response.status_code == 404
         assert response.json()["detail"] == "Usuário não encontrado"
@@ -63,15 +66,17 @@ class TestRecommendationRouter:
 
     def test_post_create_recommendation_without_additional_info(self, monkeypatch, test_client):
         """Test POST /recommendations/ succeeds without optional additional_info."""
-        fake_rec = SimpleNamespace(
-            id=1, user_id=1, name="Teste",
-            description="Recomendação de teste", duration=30.0,
-            category="Exercício", reasoning="Recomendação gerada para teste",
-            precautions="Sem precauções específicas",
-        )
+        fake_payload = {
+            "activities": [
+                {"name": "Teste", "description": "Recomendação de teste",
+                 "duration": 30.0, "category": "Exercício"}
+            ],
+            "reasoning": "Recomendação gerada para teste",
+            "precautions": "Sem precauções específicas",
+        }
         monkeypatch.setattr(
-            "src.modules.recommendations.router.recommendation_router.RecommendationController.create_recommendation",
-            lambda self, request: fake_rec,
+            "src.modules.recommendations.router.recommendation_router.RecommendationController.create_recommendations",
+            lambda self, request: fake_payload,
         )
 
         response = test_client.post("/recommendations/", json={"user_id": 1})
@@ -82,18 +87,21 @@ class TestRecommendationRouter:
 
     def test_post_create_recommendation_response_structure(self, monkeypatch, test_client, valid_recommendation_data):
         """Test POST /recommendations/ response has correct nested structure."""
-        fake_rec = SimpleNamespace(
-            id=1, user_id=1, name="Caminhada",
-            description="Caminhada leve de 30 minutos", duration=30.0,
-            category="Cardio", reasoning="Perfil do usuario",
-            precautions="Nenhuma",
-        )
+        fake_payload = {
+            "activities": [
+                {"name": "Caminhada", "description": "Caminhada leve de 30 minutos",
+                 "duration": 30.0, "category": "Cardio"}
+            ],
+            "reasoning": "Perfil do usuario",
+            "precautions": "Nenhuma",
+        }
         monkeypatch.setattr(
-            "src.modules.recommendations.router.recommendation_router.RecommendationController.create_recommendation",
-            lambda self, request: fake_rec,
+            "src.modules.recommendations.router.recommendation_router.RecommendationController.create_recommendations",
+            lambda self, request: fake_payload,
         )
 
-        response = test_client.post("/recommendations/", json=valid_recommendation_data)
+        response = test_client.post(
+            "/recommendations/", json=valid_recommendation_data)
 
         assert response.status_code == 201
         data = response.json()
@@ -123,7 +131,8 @@ class TestRecommendationRouter:
             lambda self, id, request: fake_feedback,
         )
 
-        response = test_client.post("/recommendations/1/feedback", json=valid_feedback_data)
+        response = test_client.post(
+            "/recommendations/1/feedback", json=valid_feedback_data)
 
         assert response.status_code == 201
         data = response.json()
@@ -140,7 +149,8 @@ class TestRecommendationRouter:
             lambda self, id, request: None,
         )
 
-        response = test_client.post("/recommendations/999/feedback", json=valid_feedback_data)
+        response = test_client.post(
+            "/recommendations/999/feedback", json=valid_feedback_data)
 
         assert response.status_code == 404
         assert response.json()["detail"] == "Recomendação não encontrada"
@@ -172,7 +182,8 @@ class TestRecommendationRouter:
             lambda self, id, request: fake_feedback,
         )
 
-        response = test_client.post("/recommendations/3/feedback", json=valid_feedback_data)
+        response = test_client.post(
+            "/recommendations/3/feedback", json=valid_feedback_data)
 
         assert response.status_code == 201
         data = response.json()
