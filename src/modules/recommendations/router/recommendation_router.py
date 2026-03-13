@@ -22,50 +22,52 @@ router = APIRouter(prefix="/recommendations", tags=["recommendations"])
         404: {"description": "Usuário não encontrado"},
     },
 )
-async def create_recommendation(request: dict, db: Session = Depends(get_db)):
+async def create_recommendations(request: dict, db: Session = Depends(get_db)):
     try:
         recommendation_repository = RecommendationRepository(db)
-        recommendation_controller = RecommendationController(recommendation_repository)
-        recommendation = recommendation_controller.create_recommendation(request)
+        recommendation_controller = RecommendationController(
+            recommendation_repository)
+        recommendation = recommendation_controller.create_recommendations(
+            request)
 
         if recommendation is None:
-            raise HTTPException(status_code=404, detail="Usuário não encontrado")
-        
+            raise HTTPException(
+                status_code=404, detail="Usuário não encontrado")
+
         return RecommendationResponse(
             message="Recomendação criada",
             response={
-            "activities": [{
-                "name": recommendation.name,
-                "description": recommendation.description,
-                "duration": recommendation.duration,
-                "category": recommendation.category
-            }],
-            "reasoning": recommendation.reasoning,
-            "precautions": recommendation.precautions
-        })
+                "activities": recommendation["activities"],
+                "reasoning": recommendation["reasoning"],
+                "precautions": recommendation["precautions"]
+            })
     except pydantic_core.ValidationError:
-        raise HTTPException(status_code=422, detail="Erro de validação nos dados de entrada")
+        raise HTTPException(
+            status_code=422, detail="Erro de validação nos dados de entrada")
 
 
-@router.post("/{id}/feedback", 
-    status_code=201, 
-    summary="Criar feedback para recomendação", 
-    description="Cria um feedback para uma recomendação específica.",
-    response_model=RecommendationFeedbackResponse,
-    responses={
-        201: {"description": "Feedback criado com sucesso"},
-        404: {"description": "Recomendação não encontrada"},
-        422: {"description": "Erro de validação nos dados de entrada"},
-    }
-)
+@router.post("/{id}/feedback",
+             status_code=201,
+             summary="Criar feedback para recomendação",
+             description="Cria um feedback para uma recomendação específica.",
+             response_model=RecommendationFeedbackResponse,
+             responses={
+                 201: {"description": "Feedback criado com sucesso"},
+                 404: {"description": "Recomendação não encontrada"},
+                 422: {"description": "Erro de validação nos dados de entrada"},
+             }
+             )
 async def create_recommendation_feedback(id: int, request: dict, db: Session = Depends(get_db)):
     try:
         recommendation_repository = RecommendationRepository(db)
-        recommendation_controller = RecommendationController(recommendation_repository)
-        response = recommendation_controller.create_recommendation_feedback(id, request)
+        recommendation_controller = RecommendationController(
+            recommendation_repository)
+        response = recommendation_controller.create_recommendation_feedback(
+            id, request)
 
         if response is None:
-            raise HTTPException(status_code=404, detail="Recomendação não encontrada")
+            raise HTTPException(
+                status_code=404, detail="Recomendação não encontrada")
 
         return RecommendationFeedbackResponse(
             message="Feedback criado",
@@ -77,4 +79,5 @@ async def create_recommendation_feedback(id: int, request: dict, db: Session = D
             }
         )
     except pydantic_core.ValidationError:
-        raise HTTPException(status_code=422, detail="Erro de validação nos dados de entrada")
+        raise HTTPException(
+            status_code=422, detail="Erro de validação nos dados de entrada")
