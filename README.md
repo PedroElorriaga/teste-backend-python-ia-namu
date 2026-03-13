@@ -65,13 +65,15 @@ src/
         ├── dtos/
         ├── models/
         ├── repositories/
-        └── router/
+        ├── router/
+        └── services/    # Integração com serviços externos (ex: Ollama LLM)
 ```
 
-**Padrão adotado**: `Router → Controller → Repository`
+**Padrão adotado**: `Router → Controller → Service / Repository`
 
 - **Router**: recebe a requisição HTTP, delega ao controller e formata a resposta
 - **Controller**: valida o DTO de entrada e orquestra a lógica de negócio
+- **Service**: integração com serviços externos (ex: Ollama LLM)
 - **Repository**: único ponto de acesso ao banco de dados
 
 ---
@@ -302,6 +304,9 @@ Documentação Swagger em `http://localhost:8000/docs`.
 | `DB_HOST` | Host do PostgreSQL | `localhost` |
 | `DB_PORT` | Porta do PostgreSQL | `5432` |
 | `DB_NAME` | Nome do banco de dados | `namu_db` |
+| `OLLAMA_BASE_URL` | URL base do Ollama local | `http://localhost:11434` |
+| `OLLAMA_MODEL` | Modelo utilizado para gerar recomendações | `llama3.2` |
+| `OLLAMA_TIMEOUT_SECONDS` | Timeout da chamada HTTP para o Ollama | `60` |
 
 ---
 
@@ -349,6 +354,8 @@ A suíte de testes cobre:
 
 **SQLAlchemy com sessão síncrona**: Optei por `SessionLocal` síncrono em vez de async para simplificar a integração inicial com PostgreSQL, sem perda funcional para o escopo do projeto.
 
+**SQL raw via `sqlalchemy.text()` em queries específicas**: Algumas operações do repositório utilizam SQL raw com parâmetros nomeados (`:param`) em vez do ORM. Isso foi adotado em consultas simples de leitura (`get_user_by_id`) e inserts com `RETURNING` (`create_recommendation_feedback`) para manter controle explícito sobre o SQL gerado e evitar overhead do ORM onde não é necessário.
+
 **Pydantic para DTOs**: Todos os dados de entrada e saída usam schemas Pydantic separados dos modelos ORM, garantindo separação entre a camada de persistência e a camada HTTP.
 
 **Alembic para migrações**: O schema evolui via migrations versionadas, permitindo rastrear e reverter mudanças de banco com segurança.
@@ -361,16 +368,23 @@ A suíte de testes cobre:
 
 ### Implementado ✅
 - Cadastro de usuários com validação de perfil
-- Geração de recomendações (com dados stub — LLM em integração)
+- Geração de recomendações personalizadas via LLM (Ollama)
+- Persistência em lote de múltiplas atividades por chamada
 - Histórico de recomendações por usuário
-- Endpoint de feedback com persistência
+- Endpoint de feedback com persistência via SQL raw (`INSERT ... RETURNING`)
+- Consultas com SQL raw parametrizado (`sqlalchemy.text()`) no repositório
 - Migrações de banco via Alembic
 - Seed de dados com perfis variados
-- Testes automatizados com cobertura de routers, controllers e repositories
+- Testes automatizados com cobertura de routers, controllers, repositories e service
 - Documentação automática via Swagger (`/docs`)
 
 ### Em desenvolvimento 🚧
-- **Integração com LLM**: O `RecommendationController` atualmente retorna dados fixos (stub). A integração com um modelo de linguagem (OpenAI, Anthropic ou Ollama local) será o próximo passo, com prompt estruturado contendo `system message`, perfil do usuário e `additional_info`
+- Refinar observabilidade da integração com logs estruturados e métricas de latência
+
+### Implementado recentemente
+- **Integração com LLM via Ollama local**: O fluxo de recomendações envia um prompt estruturado com `system message`, perfil do usuário e `additional_info`, consome o modelo `llama3.2` e persiste as atividades retornadas pela IA
+- **Criação em lote de recomendações**: O repositório agora persiste múltiplas atividades por requisição via `add_all()`, substituindo a criação individual
+- **SQL raw no repositório**: `get_user_by_id` e `create_recommendation_feedback` utilizam `sqlalchemy.text()` com parâmetros nomeados, garantindo controle explícito sobre as queries e prevenção de SQL injection via bind parameters
 
 ### O que faria diferente com mais tempo
 - Adicionar Ollama ao `docker-compose.yml` para rodar LLM localmente sem dependência de API externa
