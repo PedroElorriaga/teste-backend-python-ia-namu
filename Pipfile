@@ -13,6 +13,7 @@ requests = "*"
 [dev-packages]
 pytest = "==9.0.2"
 alembic = "*"
+httpx = "*"
 
 [requires]
 python_version = "3.11"
