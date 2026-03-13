@@ -42,8 +42,8 @@ jobs:
 
       - name: Run Tests
         env:
-          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/test_db
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5434/test_db
 
-          SQLALCHEMY_DATABASE_URI: postgresql+psycopg://postgres:postgres@localhost:5432/test_db
+          SQLALCHEMY_DATABASE_URI: postgresql+psycopg://postgres:postgres@localhost:5434/test_db
 
         run: pipenv run tests
