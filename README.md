@@ -23,7 +23,7 @@ API REST desenvolvida com **FastAPI** e **PostgreSQL** que oferece recomendaçõ
 
 ## Sobre o Projeto
 
-Este projeto é uma API de recomendações de bem-estar que recebe o perfil de um usuário (objetivos, restrições, nível de experiência) e, com base nesses dados, gera sugestões de atividades personalizadas. A integração com LLM (modelo de linguagem) está prevista na arquitetura e em implementação.
+Este projeto é uma API de recomendações de bem-estar que recebe o perfil de um usuário (objetivos, restrições, nível de experiência) e, com base nesses dados, gera sugestões de atividades personalizadas utilizando um LLM (modelo de linguagem) via Ollama.
 
 O projeto foi construído como teste técnico para a vaga de Desenvolvedor Backend Python com foco em IA na Namu.
 
@@ -40,6 +40,7 @@ O projeto foi construído como teste técnico para a vaga de Desenvolvedor Backe
 | **psycopg2-binary** | 2.9.10 | Driver PostgreSQL mais utilizado para Python |
 | **Alembic** | latest | Controle de versão e migrações do schema do banco de dados |
 | **Uvicorn** | 0.41.0 | Servidor ASGI de alta performance para FastAPI |
+| **Ollama** | latest | Servidor local para execução de modelos LLM (ex: `llama3.2`, `mistral`) |
 | **pytest** | 9.0.2 | Framework de testes com suporte a fixtures, monkeypatch e parametrização |
 | **Pipenv** | — | Gerenciamento de dependências e ambientes virtuais |
 
@@ -264,13 +265,16 @@ cp .env.example .env
 
 Preencha as variáveis conforme descrito na seção [Variáveis de Ambiente](#variáveis-de-ambiente).
 
-### 3. Suba o banco de dados
+### 3. Suba os serviços (banco + Ollama)
 
 ```bash
 docker-compose up -d
 ```
 
-O PostgreSQL subirá na porta configurada em `DB_PORT`. O script `seed.sql` será executado automaticamente na primeira inicialização, populando a base com 5 perfis de exemplo.
+Isso sobe:
+- **PostgreSQL** na porta configurada em `DB_PORT`, com o script `seed.sql` executado automaticamente na primeira inicialização (5 perfis de exemplo)
+- **Ollama** na porta `11434`, servindo modelos LLM localmente
+- **ollama_init** que faz o download automático do modelo definido em `LLM_MODEL` (padrão: `llama3.2`)
 
 ### 4. Instale as dependências
 
@@ -299,14 +303,14 @@ Documentação Swagger em `http://localhost:8000/docs`.
 
 | Variável | Descrição | Exemplo |
 |---|---|---|
-| `DB_USER` | Usuário do PostgreSQL | `postgres` |
-| `DB_PASSWORD` | Senha do PostgreSQL | `postgres` |
+| `DB_USER` | Usuário do PostgreSQL | `namu` |
+| `DB_PASSWORD` | Senha do PostgreSQL | `namu123` |
 | `DB_HOST` | Host do PostgreSQL | `localhost` |
-| `DB_PORT` | Porta do PostgreSQL | `5432` |
-| `DB_NAME` | Nome do banco de dados | `namu_db` |
-| `OLLAMA_BASE_URL` | URL base do Ollama local | `http://localhost:11434` |
-| `OLLAMA_MODEL` | Modelo utilizado para gerar recomendações | `llama3.2` |
-| `OLLAMA_TIMEOUT_SECONDS` | Timeout da chamada HTTP para o Ollama | `60` |
+| `DB_PORT` | Porta do PostgreSQL | `5434` |
+| `DB_NAME` | Nome do banco de dados | `namu_ai` |
+| `LLM_MODEL` | Modelo LLM utilizado pelo Ollama e pelo service (configurável) | `llama3.2`, `mistral`, `gemma2` |
+| `LLM_API_KEY` | Chave de API para provedores na nuvem (reservado para uso futuro) | — |
+| `OLLAMA_BASE_URL` | URL base do servidor Ollama | `http://localhost:11434` |
 
 ---
 
@@ -344,6 +348,7 @@ A suíte de testes cobre:
 - Roteamento (routers) de usuários e recomendações
 - Controllers de usuários e recomendações
 - Repositories de usuários e recomendações
+- Service de integração com Ollama (OllamaRecommendationService)
 - Casos de sucesso, erros 404 e erros de validação 422
 
 ---
@@ -378,16 +383,7 @@ A suíte de testes cobre:
 - Testes automatizados com cobertura de routers, controllers, repositories e service
 - Documentação automática via Swagger (`/docs`)
 
-### Em desenvolvimento 🚧
-- Refinar observabilidade da integração com logs estruturados e métricas de latência
-
-### Implementado recentemente
-- **Integração com LLM via Ollama local**: O fluxo de recomendações envia um prompt estruturado com `system message`, perfil do usuário e `additional_info`, consome o modelo `llama3.2` e persiste as atividades retornadas pela IA
-- **Criação em lote de recomendações**: O repositório agora persiste múltiplas atividades por requisição via `add_all()`, substituindo a criação individual
-- **SQL raw no repositório**: `get_user_by_id` e `create_recommendation_feedback` utilizam `sqlalchemy.text()` com parâmetros nomeados, garantindo controle explícito sobre as queries e prevenção de SQL injection via bind parameters
-
 ### O que faria diferente com mais tempo
-- Adicionar Ollama ao `docker-compose.yml` para rodar LLM localmente sem dependência de API externa
 - Implementar parse com fallback para respostas inesperadas da IA
 - Adicionar logging estruturado (ex: `structlog`)
 - Implementar cache de recomendações (Redis) para não chamar a LLM repetidamente para o mesmo perfil

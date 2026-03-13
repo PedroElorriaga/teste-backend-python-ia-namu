@@ -38,7 +38,7 @@ services:
         until OLLAMA_HOST=http://ollama:11434 ollama list >/dev/null 2>&1; do
           sleep 2
         done
-        OLLAMA_HOST=http://ollama:11434 ollama pull llama3.2
+        OLLAMA_HOST=http://ollama:11434 ollama pull ${LLM_MODEL:-llama3.2}
 
 volumes:
   postgres_data:
