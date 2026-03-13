@@ -1,19 +1,45 @@
-version: "3.8"
-
 services:
   postgres:
     image: postgres:16
     container_name: namu_ai_db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USER:-namu}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-namu123}
-      POSTGRES_DB: ${DB_NAME:-namu_ai}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "${DB_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./seed.sql:/docker-entrypoint-initdb.d/seed.sql
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: namu_ai_ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    command: ["serve"]
+
+  ollama_init:
+    image: ollama/ollama:latest
+    container_name: namu_ai_ollama_init
+    depends_on:
+      - ollama
+    restart: on-failure
+    entrypoint:
+      - /bin/sh
+      - -c
+    command:
+      - |
+        set -e
+        until OLLAMA_HOST=http://ollama:11434 ollama list >/dev/null 2>&1; do
+          sleep 2
+        done
+        OLLAMA_HOST=http://ollama:11434 ollama pull llama3.2
+
 volumes:
   postgres_data:
+  ollama_data:

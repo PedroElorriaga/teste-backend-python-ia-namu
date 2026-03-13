@@ -1,0 +1,23 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+fastapi = "==0.135.1"
+uvicorn = "==0.41.0"
+sqlalchemy = "==2.0.43"
+psycopg2-binary = "==2.9.10"
+requests = "*"
+
+[dev-packages]
+pytest = "==9.0.2"
+alembic = "*"
+httpx = "*"
+
+[requires]
+python_version = "3.11"
+
+[scripts]
+start = "uvicorn src.main.main:app --reload"
+tests = "pytest tests/. -v"

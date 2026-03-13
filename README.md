@@ -1,133 +1,395 @@
-# Teste Técnico — Desenvolvedor Backend Python com foco em IA (Júnior/Pleno)
+# Assistente de Recomendação de Bem-Estar com IA — Namu
 
-Empresa: Namu (Saúde e Bem-Estar)
-Nível: Júnior / Pleno (mesmo teste, avaliação pela qualidade da entrega)
-Tempo estimado: 3 a 4 horas
-Prazo de entrega: 7 dias corridos
-Entrega: repositório público no GitHub
+API REST desenvolvida com **FastAPI** e **PostgreSQL** que oferece recomendações personalizadas de atividades de bem-estar com base no perfil do usuário, com suporte a histórico de recomendações e coleta de feedbacks.
 
 ---
 
-## Sobre a Namu
+## Sumário
 
-A Namu é uma empresa de saúde e bem-estar. Este teste simula um cenário do dia a dia de desenvolvimento na empresa, com foco em IA e dados.
-
-Júnior e pleno fazem o mesmo teste. A diferença está na entrega: esperamos que pleno entregue mais funcionalidades, código melhor organizado, tratamento de erros mais completo e alguns diferenciais. Júnior deve focar em entregar o que é obrigatório, com clareza e código funcional.
-
-### Sobre o uso de IA
-
-Nesta vaga, o uso de ferramentas de IA (Copilot, ChatGPT, Claude, etc.) é permitido e faz parte da avaliação. Saber usar IA como ferramenta de trabalho é esperado. Mencione no README quais ferramentas usou e como ajudaram.
-
----
-
-## Projeto: Assistente de recomendação de bem-estar com IA
-
-Desenvolva uma API que usa IA generativa para recomendar atividades de bem-estar com base no perfil do usuário. O foco é avaliar a capacidade de integrar modelos de linguagem, montar prompts bem estruturados e entregar uma solução funcional tipo PoC/MVP.
-
-### O que fornecemos
-
-Um `docker-compose.yml` com PostgreSQL, um `.env.example` (com placeholder para chave de API de LLM) e um script SQL de seed com perfis de usuário.
-
-O candidato configura o projeto Python do zero. A integração com LLM é obrigatória. Pode usar API na nuvem (OpenAI, Anthropic, etc.) ou rodar um modelo local via Ollama, que é gratuito e não precisa de chave (Llama 3, Mistral, entre outros). O README deve informar qual modelo usou e como rodar.
-
-### Funcionalidades obrigatórias
-
-1. Cadastro de Perfil do Usuário (`POST /users`)
-   - Campos: `id`, `name`, `age`, `goals` (array: ex. "reduzir estresse", "melhorar sono", "perder peso"), `restrictions` (texto livre), `experience_level` (iniciante, intermediário, avançado)
-
-2. Recomendação com IA (`POST /recommendations`)
-   - Recebe o `user_id` e, opcionalmente, um contexto adicional (ex: "estou com dor nas costas hoje")
-   - Consulta o perfil do usuário no banco
-   - Monta um prompt com system message, contexto do usuário e formato de saída esperado
-   - Retorna JSON com: `activities` (lista com nome, descrição, duração, categoria), `reasoning` (justificativa da IA), `precautions` (alertas com base nas restrições)
-
-3. Histórico de Recomendações (`GET /users/:userId/recommendations`)
-   - Armazena e retorna as recomendações geradas, com data e contexto utilizado
-
-4. Endpoint de Feedback (`POST /recommendations/:id/feedback`)
-   - Usuário avalia a recomendação (rating 1-5 e comentário)
-   - Feedback é armazenado para possível uso no refinamento dos prompts
-
-### Requisitos técnicos
-
-- Python 3.10+
-- Framework: livre escolha (FastAPI, Flask ou Django, justifique no README)
-- Banco de dados: PostgreSQL ou SQLite
-- Incluir ao menos uma query SQL raw além do ORM
-- Integração com LLM obrigatória, via API ou modelo local (Ollama)
-- Prompt bem estruturado com system message, contexto do usuário e formato de saída
-- Git/GitHub
-
-### Diferenciais (não obrigatórios)
-
-- Ollama dentro do docker-compose (LLM + banco sobem juntos)
-- Parse com fallback para respostas inesperadas da IA
-- Testes automatizados (pytest)
-- Validação de entrada/saída com Pydantic
-- Logging estruturado
-- Webhook ou integração com serviço externo
-- Documentação automática (Swagger)
-- Pipeline de dados simples (ex: processamento do feedback para refinar prompts)
-- Noções de arquitetura para escalar (filas, cache)
-
-### Critérios de avaliação
-
-| Critério | Peso |
-|----------|------|
-| Qualidade da engenharia de prompt e integração com LLM | 25% |
-| Estrutura do código e boas práticas Python | 20% |
-| SQL e modelagem de dados | 20% |
-| Capacidade de construir integrações e APIs funcionais | 15% |
-| Tratamento de erros e resiliência | 10% |
-| README e documentação | 10% |
+- [Sobre o Projeto](#sobre-o-projeto)
+- [Tecnologias Utilizadas](#tecnologias-utilizadas)
+- [Arquitetura e Estrutura](#arquitetura-e-estrutura)
+- [Modelos de Dados](#modelos-de-dados)
+- [Endpoints da API](#endpoints-da-api)
+- [Pré-requisitos](#pré-requisitos)
+- [Instalação e Execução](#instalação-e-execução)
+- [Variáveis de Ambiente](#variáveis-de-ambiente)
+- [Migrações com Alembic](#migrações-com-alembic)
+- [Testes](#testes)
+- [Decisões Técnicas](#decisões-técnicas)
+- [Estado Atual e Próximos Passos](#estado-atual-e-próximos-passos)
 
 ---
 
-## Fluxo do processo
+## Sobre o Projeto
 
-1. Teste take-home: você recebe este documento, desenvolve a solução e envia o link do repositório GitHub em até 7 dias
-2. Avaliação técnica: time da Namu avalia o código entregue com base nos critérios deste documento
-3. Entrevista técnica com a Namu: baseada no projeto entregue, o time avalia raciocínio lógico, entendimento da solução e o que você sabe fazer de fato
+Este projeto é uma API de recomendações de bem-estar que recebe o perfil de um usuário (objetivos, restrições, nível de experiência) e, com base nesses dados, gera sugestões de atividades personalizadas. A integração com LLM (modelo de linguagem) está prevista na arquitetura e em implementação.
 
----
-
-## Instruções de entrega
-
-Crie um repositório público no GitHub com um `README.md` que contenha: descrição do projeto e funcionalidades implementadas, tecnologias utilizadas e por que as escolheu, instruções de instalação e execução, decisões técnicas relevantes e o que faria diferente com mais tempo.
-
-### Prazo
-
-7 dias corridos a partir do recebimento do teste.
-
-### O que valorizamos
-
-Código limpo e organizado importa mais do que quantidade de features. Commits bem escritos mostram processo de pensamento. Um README bem feito mostra capacidade de comunicação técnica. Tratamento de erros, validações e separação de responsabilidades contam bastante. Testes mostram cuidado com qualidade. O projeto precisa rodar seguindo as instruções do README, sem ajustes.
-
-### O que não valorizamos
-
-Over-engineering para o escopo proposto. Código sem tratamento de erros. Repositório com um commit gigante. README genérico ou vazio. Projeto que não roda.
+O projeto foi construído como teste técnico para a vaga de Desenvolvedor Backend Python com foco em IA na Namu.
 
 ---
 
-## Rubrica de avaliação
+## Tecnologias Utilizadas
 
-| Nota | Classificação | Descrição |
-|------|--------------|-----------|
-| 9-10 | Excelente | Atende todos os requisitos, implementa diferenciais, código exemplar |
-| 7-8 | Bom | Atende os requisitos principais, código organizado, poucas falhas |
-| 5-6 | Satisfatório | Funciona parcialmente, organização básica, precisa de melhorias |
-| 3-4 | Insuficiente | Muitas falhas, código desorganizado, requisitos principais incompletos |
-| 0-2 | Eliminatório | Não funciona, plágio evidente, ou entrega vazia |
+| Tecnologia | Versão | Justificativa |
+|---|---|---|
+| **Python** | 3.11 | Versão LTS estável com suporte completo a tipagem e asyncio |
+| **FastAPI** | 0.135.1 | Alta performance, validação automática com Pydantic, documentação Swagger nativa |
+| **SQLAlchemy** | 2.0.43 | ORM maduro com suporte a tipos PostgreSQL nativos (ex: `ARRAY`) |
+| **PostgreSQL** | 16 | Banco relacional robusto com suporte a arrays e tipos customizados |
+| **psycopg2-binary** | 2.9.10 | Driver PostgreSQL mais utilizado para Python |
+| **Alembic** | latest | Controle de versão e migrações do schema do banco de dados |
+| **Uvicorn** | 0.41.0 | Servidor ASGI de alta performance para FastAPI |
+| **pytest** | 9.0.2 | Framework de testes com suporte a fixtures, monkeypatch e parametrização |
+| **Pipenv** | — | Gerenciamento de dependências e ambientes virtuais |
 
-Nota mínima para aprovação: 6.0
+---
 
-### Diferenciação Júnior vs Pleno
+## Arquitetura e Estrutura
 
-| Aspecto | Júnior (esperado) | Pleno (esperado) |
-|---------|-------------------|------------------|
-| Funcionalidades | Obrigatórias funcionando | Obrigatórias + diferenciais |
-| Código | Organizado e legível | Bem estruturado, com patterns claros |
-| Erros | Tratamento básico | Tratamento completo com mensagens claras |
-| Testes | Unitários básicos | Unitários + integração |
-| Banco de dados | Modelagem funcional | Modelagem otimizada, queries elaboradas |
-| Infraestrutura | Roda localmente | Docker Compose completo, noções de CI/CD |
+O projeto segue uma arquitetura **modular por domínio**, com separação clara de responsabilidades em camadas:
+
+```
+src/
+├── database/           # Configuração da conexão com o banco (SessionLocal, Base, get_db)
+├── main/               # Ponto de entrada da aplicação FastAPI
+└── modules/
+    ├── users/          # Módulo de usuários
+    │   ├── controller/ # Orquestra requisições, valida DTOs
+    │   ├── dtos/       # Schemas Pydantic de entrada e saída
+    │   ├── models/     # Modelos ORM (SQLAlchemy)
+    │   ├── repositories/ # Acesso direto ao banco de dados
+    │   └── router/     # Definição das rotas HTTP
+    └── recommendations/ # Módulo de recomendações
+        ├── controller/
+        ├── dtos/
+        ├── models/
+        ├── repositories/
+        ├── router/
+        └── services/    # Integração com serviços externos (ex: Ollama LLM)
+```
+
+**Padrão adotado**: `Router → Controller → Service / Repository`
+
+- **Router**: recebe a requisição HTTP, delega ao controller e formata a resposta
+- **Controller**: valida o DTO de entrada e orquestra a lógica de negócio
+- **Service**: integração com serviços externos (ex: Ollama LLM)
+- **Repository**: único ponto de acesso ao banco de dados
+
+---
+
+## Modelos de Dados
+
+### `users`
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `id` | Integer (PK) | Identificador único |
+| `name` | String(50) | Nome do usuário (único) |
+| `age` | Integer | Idade |
+| `goals` | ARRAY(String) | Objetivos de bem-estar (ex: "reduzir estresse") |
+| `restrictions` | String(255) | Restrições de saúde ou físicas (opcional) |
+| `experience_level` | Enum | `iniciante`, `intermediário` ou `avançado` |
+| `created_at` | DateTime | Data de criação (automática) |
+
+### `recommendations`
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `id` | Integer (PK) | Identificador único |
+| `user_id` | Integer (FK) | Referência ao usuário |
+| `name` | String(50) | Nome da atividade recomendada |
+| `description` | String(255) | Descrição da atividade |
+| `duration` | Float | Duração em minutos |
+| `category` | String(64) | Categoria (ex: "Cardio", "Yoga") |
+| `reasoning` | String(255) | Justificativa da recomendação pela IA |
+| `precautions` | String(255) | Alertas com base nas restrições do usuário |
+| `created_at` | DateTime | Data de criação (automática) |
+
+### `recommendation_feedbacks`
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `id` | Integer (PK) | Identificador único |
+| `recommendation_id` | Integer (FK) | Referência à recomendação avaliada |
+| `rating` | Integer | Avaliação de 1 a 5 |
+| `comment` | String(255) | Comentário do usuário |
+| `created_at` | DateTime | Data de criação (automática) |
+
+---
+
+## Endpoints da API
+
+A documentação interativa completa está disponível via Swagger em `http://localhost:8000/docs` após subir a aplicação.
+
+### Usuários
+
+#### `POST /users/`
+Cria um novo usuário com perfil de bem-estar.
+
+**Request body:**
+```json
+{
+  "name": "Ana Costa",
+  "age": 28,
+  "goals": ["reduzir estresse", "melhorar sono"],
+  "restrictions": "Nenhuma",
+  "experience_level": "iniciante"
+}
+```
+
+**Response (201):**
+```json
+{
+  "message": "Usuario criado",
+  "user": {
+    "id": 1,
+    "name": "Ana Costa",
+    "age": 28,
+    "goals": ["reduzir estresse", "melhorar sono"],
+    "restrictions": "Nenhuma",
+    "experience_level": "iniciante"
+  }
+}
+```
+
+---
+
+#### `GET /users/{user_id}/recommendations`
+Retorna o histórico de recomendações de um usuário.
+
+**Response (200):**
+```json
+{
+  "message": "Histórico de recomendações do usuário 1",
+  "recommendations": [
+    {
+      "name": "Caminhada",
+      "description": "Caminhada leve de 30 minutos",
+      "duration": 30.0,
+      "category": "Cardio",
+      "reasoning": "Indicado para redução de estresse.",
+      "precautions": "Hidrate-se antes de começar."
+    }
+  ]
+}
+```
+
+---
+
+### Recomendações
+
+#### `POST /recommendations/`
+Gera uma nova recomendação personalizada para o usuário. Retorna 404 se o `user_id` não existir.
+
+**Request body:**
+```json
+{
+  "user_id": 1,
+  "additional_info": "Estou com dor nas costas hoje"
+}
+```
+
+**Response (201):**
+```json
+{
+  "message": "Recomendação criada",
+  "response": {
+    "activities": [
+      {
+        "name": "Caminhada",
+        "description": "Caminhada leve de 30 minutos",
+        "duration": 30.0,
+        "category": "Cardio"
+      }
+    ],
+    "reasoning": "Atividade indicada para o perfil do usuário.",
+    "precautions": "Evite impacto por causa das restrições informadas."
+  }
+}
+```
+
+---
+
+#### `POST /recommendations/{id}/feedback`
+Registra um feedback do usuário sobre uma recomendação. Retorna 404 se a recomendação não existir.
+
+**Request body:**
+```json
+{
+  "rating": 4,
+  "comment": "Gostei muito da recomendação!"
+}
+```
+
+**Response (201):**
+```json
+{
+  "message": "Feedback criado",
+  "response": {
+    "id": 1,
+    "recommendation_id": 1,
+    "rating": 4,
+    "comment": "Gostei muito da recomendação!"
+  }
+}
+```
+
+---
+
+## Pré-requisitos
+
+- [Docker](https://www.docker.com/) e Docker Compose
+- [Python 3.11+](https://www.python.org/)
+- [Pipenv](https://pipenv.pypa.io/) (instalação: `pip install pipenv`)
+
+---
+
+## Instalação e Execução
+
+### 1. Clone o repositório
+
+```bash
+git clone <url-do-repositório>
+cd teste-backend-python-ia-namu
+```
+
+### 2. Configure as variáveis de ambiente
+
+Crie um arquivo `.env` na raiz do projeto com base no `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Preencha as variáveis conforme descrito na seção [Variáveis de Ambiente](#variáveis-de-ambiente).
+
+### 3. Suba o banco de dados
+
+```bash
+docker-compose up -d
+```
+
+O PostgreSQL subirá na porta configurada em `DB_PORT`. O script `seed.sql` será executado automaticamente na primeira inicialização, populando a base com 5 perfis de exemplo.
+
+### 4. Instale as dependências
+
+```bash
+pipenv install
+```
+
+### 5. Execute as migrações
+
+```bash
+pipenv run alembic upgrade head
+```
+
+### 6. Inicie a aplicação
+
+```bash
+pipenv run start
+```
+
+A API estará disponível em `http://localhost:8000`.  
+Documentação Swagger em `http://localhost:8000/docs`.
+
+---
+
+## Variáveis de Ambiente
+
+| Variável | Descrição | Exemplo |
+|---|---|---|
+| `DB_USER` | Usuário do PostgreSQL | `postgres` |
+| `DB_PASSWORD` | Senha do PostgreSQL | `postgres` |
+| `DB_HOST` | Host do PostgreSQL | `localhost` |
+| `DB_PORT` | Porta do PostgreSQL | `5432` |
+| `DB_NAME` | Nome do banco de dados | `namu_db` |
+| `OLLAMA_BASE_URL` | URL base do Ollama local | `http://localhost:11434` |
+| `OLLAMA_MODEL` | Modelo utilizado para gerar recomendações | `llama3.2` |
+| `OLLAMA_TIMEOUT_SECONDS` | Timeout da chamada HTTP para o Ollama | `60` |
+
+---
+
+## Migrações com Alembic
+
+O controle do schema do banco é feito via Alembic. As migrações estão em `alembic/versions/` e cobrem:
+
+1. Criação da tabela `recommendations`
+2. Adição da FK `user_id` em `recommendations`
+3. Remoção da constraint `UNIQUE` no nome da recomendação
+4. Criação da tabela `recommendation_feedbacks`
+
+Para aplicar todas as migrações:
+```bash
+pipenv run alembic upgrade head
+```
+
+Para reverter a última migração:
+```bash
+pipenv run alembic downgrade -1
+```
+
+---
+
+## Testes
+
+Os testes utilizam **pytest** com banco de dados completamente mockado (sem dependência de PostgreSQL em execução). O `conftest.py` injeta um `TestClient` do FastAPI com a sessão de banco substituída por um `Mock`.
+
+Para executar:
+```bash
+pipenv run test
+```
+
+A suíte de testes cobre:
+- Roteamento (routers) de usuários e recomendações
+- Controllers de usuários e recomendações
+- Repositories de usuários e recomendações
+- Casos de sucesso, erros 404 e erros de validação 422
+
+---
+
+## Decisões Técnicas
+
+**FastAPI sobre Flask/Django**: FastAPI foi escolhido pela validação automática via Pydantic, geração automática de documentação OpenAPI/Swagger, suporte nativo a async/await e tipagem estática, o que acelera o desenvolvimento e reduz bugs.
+
+**SQLAlchemy com sessão síncrona**: Optei por `SessionLocal` síncrono em vez de async para simplificar a integração inicial com PostgreSQL, sem perda funcional para o escopo do projeto.
+
+**SQL raw via `sqlalchemy.text()` em queries específicas**: Algumas operações do repositório utilizam SQL raw com parâmetros nomeados (`:param`) em vez do ORM. Isso foi adotado em consultas simples de leitura (`get_user_by_id`) e inserts com `RETURNING` (`create_recommendation_feedback`) para manter controle explícito sobre o SQL gerado e evitar overhead do ORM onde não é necessário.
+
+**Pydantic para DTOs**: Todos os dados de entrada e saída usam schemas Pydantic separados dos modelos ORM, garantindo separação entre a camada de persistência e a camada HTTP.
+
+**Alembic para migrações**: O schema evolui via migrations versionadas, permitindo rastrear e reverter mudanças de banco com segurança.
+
+**Testes com mock de DB**: Os testes de router, controller e repository usam `monkeypatch` e `Mock` para isolar cada camada, tornando a suíte rápida e sem dependências externas.
+
+---
+
+## Estado Atual e Próximos Passos
+
+### Implementado ✅
+- Cadastro de usuários com validação de perfil
+- Geração de recomendações personalizadas via LLM (Ollama)
+- Persistência em lote de múltiplas atividades por chamada
+- Histórico de recomendações por usuário
+- Endpoint de feedback com persistência via SQL raw (`INSERT ... RETURNING`)
+- Consultas com SQL raw parametrizado (`sqlalchemy.text()`) no repositório
+- Migrações de banco via Alembic
+- Seed de dados com perfis variados
+- Testes automatizados com cobertura de routers, controllers, repositories e service
+- Documentação automática via Swagger (`/docs`)
+
+### Em desenvolvimento 🚧
+- Refinar observabilidade da integração com logs estruturados e métricas de latência
+
+### Implementado recentemente
+- **Integração com LLM via Ollama local**: O fluxo de recomendações envia um prompt estruturado com `system message`, perfil do usuário e `additional_info`, consome o modelo `llama3.2` e persiste as atividades retornadas pela IA
+- **Criação em lote de recomendações**: O repositório agora persiste múltiplas atividades por requisição via `add_all()`, substituindo a criação individual
+- **SQL raw no repositório**: `get_user_by_id` e `create_recommendation_feedback` utilizam `sqlalchemy.text()` com parâmetros nomeados, garantindo controle explícito sobre as queries e prevenção de SQL injection via bind parameters
+
+### O que faria diferente com mais tempo
+- Adicionar Ollama ao `docker-compose.yml` para rodar LLM localmente sem dependência de API externa
+- Implementar parse com fallback para respostas inesperadas da IA
+- Adicionar logging estruturado (ex: `structlog`)
+- Implementar cache de recomendações (Redis) para não chamar a LLM repetidamente para o mesmo perfil
+- Ampliar cobertura de testes de integração com banco em memória (SQLite)
+- Adicionar pipeline simples de processamento de feedbacks para refinamento de prompts
