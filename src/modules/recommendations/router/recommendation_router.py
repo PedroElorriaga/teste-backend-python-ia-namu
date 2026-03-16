@@ -81,3 +81,6 @@ async def create_recommendation_feedback(recommendation_id: int, request: Recomm
     except pydantic_core.ValidationError:
         raise HTTPException(
             status_code=422, detail="Erro de validação nos dados de entrada")
+    except ValueError as e:
+        raise HTTPException(
+            status_code=422, detail=str(e))

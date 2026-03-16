@@ -9,7 +9,7 @@ class RecommendationCreateRequest(BaseModel):
 
 
 class RecommendationFeedbackRequest(BaseModel):
-    rating: int = Field(..., ge=1, le=5, examples=[4])
+    rating: int = Field(..., examples=[4])
     comment: str = Field(..., examples=["Gostei muito da recomendação!"])
 
 

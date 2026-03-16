@@ -68,6 +68,9 @@ class RecommendationController:
 
     def create_recommendation_feedback(self, id: int, request: RecommendationFeedbackRequest) -> Optional[RecommendationFeedback]:
 
+        if request.rating < 1 or request.rating > 5:
+            raise ValueError("Rating deve ser entre 1 e 5")
+
         feedback = self.recommendation_repository.create_recommendation_feedback(
             recommendation_id=id,
             rating=request.rating,
