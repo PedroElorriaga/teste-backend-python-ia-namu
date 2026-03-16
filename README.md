@@ -73,7 +73,7 @@ src/
 **Padrão adotado**: `Router → Controller → Service / Repository`
 
 - **Router**: recebe a requisição HTTP, delega ao controller e formata a resposta
-- **Controller**: valida o DTO de entrada e orquestra a lógica de negócio
+- **Controller**: recebe DTOs tipados, normaliza campos opcionais vazios e orquestra a lógica de negócio
 - **Service**: integração com serviços externos (ex: Ollama LLM)
 - **Repository**: único ponto de acesso ao banco de dados
 
@@ -139,6 +139,8 @@ Cria um novo usuário com perfil de bem-estar.
 }
 ```
 
+Observação: `restrictions` é opcional. Se enviado como string vazia ou apenas espaços, o valor é normalizado para `null`.
+
 **Response (201):**
 ```json
 {
@@ -165,6 +167,7 @@ Retorna o histórico de recomendações de um usuário.
   "message": "Histórico de recomendações do usuário 1",
   "recommendations": [
     {
+      "id": 1,
       "name": "Caminhada",
       "description": "Caminhada leve de 30 minutos",
       "duration": 30.0,
@@ -191,6 +194,8 @@ Gera uma nova recomendação personalizada para o usuário. Retorna 404 se o `us
 }
 ```
 
+Observação: `additional_info` é opcional. Se enviado como string vazia ou apenas espaços, o valor é normalizado para `null`.
+
 **Response (201):**
 ```json
 {
@@ -212,7 +217,7 @@ Gera uma nova recomendação personalizada para o usuário. Retorna 404 se o `us
 
 ---
 
-#### `POST /recommendations/{id}/feedback`
+#### `POST /recommendations/{recommendation_id}/feedback`
 Registra um feedback do usuário sobre uma recomendação. Retorna 404 se a recomendação não existir.
 
 **Request body:**
@@ -338,6 +343,8 @@ pipenv run alembic downgrade -1
 ## Testes
 
 Os testes utilizam **pytest** com banco de dados completamente mockado (sem dependência de PostgreSQL em execução). O `conftest.py` injeta um `TestClient` do FastAPI com a sessão de banco substituída por um `Mock`.
+
+Atualmente a suíte também cobre o contrato introduzido pelos DTOs Pydantic nas rotas/controllers, a normalização de campos opcionais vazios e a presença do `id` no histórico de recomendações.
 
 Para executar:
 ```bash
