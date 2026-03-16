@@ -287,6 +287,10 @@ Isso sobe:
 pipenv install
 ```
 
+```bash
+pipenv install --dev
+```
+
 ### 5. Execute as migrações
 
 ```bash
