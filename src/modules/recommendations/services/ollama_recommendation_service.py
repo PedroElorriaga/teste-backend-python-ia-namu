@@ -9,7 +9,7 @@ class OllamaRecommendationService:
     def __init__(self):
         self.ollama_url = (os.getenv("OLLAMA_BASE_URL")
                            or "http://localhost:11434").rstrip("/")
-        self.model = os.getenv("OLLAMA_MODEL") or "llama3.2"
+        self.model = os.getenv("LLM_MODEL") or "llama3.2"
         self.timeout = 60
 
     def __build_messages(self, user_profile: dict[str, Any], additional_info: str | None) -> list[dict[str, str]]:

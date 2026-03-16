@@ -1,6 +1,6 @@
 from src.modules.recommendations.repositories.recommendation_repository import RecommendationRepository
 from src.modules.recommendations.dtos.recommendation_dto import RecommendationCreateRequest, RecommendationFeedbackRequest
-from src.modules.recommendations.models.recommendation_model import Recommendation, RecommendationFeedback
+from src.modules.recommendations.models.recommendation_model import RecommendationFeedback
 from src.modules.recommendations.services.ollama_recommendation_service import OllamaRecommendationService
 from src.modules.users.models.user_model import User
 from typing import List, Optional, Any
@@ -21,21 +21,24 @@ class RecommendationController:
             "experience_level": user.experience_level,
         }
 
-    def create_recommendations(self, request: dict) -> Optional[dict[str, Any]]:
-        recommendation_dto = RecommendationCreateRequest(**request)
+    def create_recommendations(self, request: RecommendationCreateRequest) -> Optional[dict[str, Any]]:
+
+        if request.additional_info and request.additional_info.strip() == "":
+            request.additional_info = None
+
         user = self.recommendation_repository.get_user_by_id(
-            recommendation_dto.user_id)
+            request.user_id)
 
         if user is None:
             return None
 
         recommendation_payload = self.ollama_service.get_recommendations(
             user_profile=self.__build_user_profile(user),
-            additional_info=recommendation_dto.additional_info,
+            additional_info=request.additional_info,
         )
 
         self.recommendation_repository.create_recommendations(
-            user_id=recommendation_dto.user_id,
+            user_id=request.user_id,
             activities=recommendation_payload["activities"],
             reasoning=recommendation_payload["reasoning"],
             precautions=recommendation_payload["precautions"]
@@ -45,13 +48,14 @@ class RecommendationController:
 
         return recommendation_payload
 
-    def get_all_recommendations_by_user_id(self, user_id: int) -> List[dict]:
-        recommendations = self.recommendation_repository.get_all_recommendations_by_user_id(
+    def get_user_history_recommendations_by_user_id(self, user_id: int) -> List[dict]:
+        recommendations = self.recommendation_repository.get_user_history_recommendations_by_user_id(
             user_id)
         recommendation_list = []
 
         for recommendation in recommendations:
             recommendation_list.append({
+                "id": recommendation.id,
                 "name": recommendation.name,
                 "description": recommendation.description,
                 "duration": recommendation.duration,
@@ -62,14 +66,15 @@ class RecommendationController:
 
         return recommendation_list
 
-    def create_recommendation_feedback(self, id: int, request: dict) -> Optional[RecommendationFeedback]:
-        recommendation_dto = RecommendationFeedbackRequest(
-            recommendation_id=id, **request)
+    def create_recommendation_feedback(self, id: int, request: RecommendationFeedbackRequest) -> Optional[RecommendationFeedback]:
+
+        if request.rating < 1 or request.rating > 5:
+            raise ValueError("Rating deve ser entre 1 e 5")
 
         feedback = self.recommendation_repository.create_recommendation_feedback(
-            recommendation_id=recommendation_dto.recommendation_id,
-            rating=recommendation_dto.rating,
-            comment=recommendation_dto.comment
+            recommendation_id=id,
+            rating=request.rating,
+            comment=request.comment
         )
 
         if feedback is None:

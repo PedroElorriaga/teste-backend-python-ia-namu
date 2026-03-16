@@ -91,18 +91,18 @@ class TestRecommendationRepository:
         assert args[0].created_at is not None
         assert args[0].created_at.tzinfo is not None
 
-    # ── get_all_recommendations_by_user_id ──
+    # ── get_user_history_recommendations_by_user_id ──
 
-    def test_get_all_recommendations_by_user_id_empty(self, fake_db_session):
+    def test_get_user_history_recommendations_by_user_id_empty(self, fake_db_session):
         """Test getting recommendations for user with no recommendations."""
         repository = RecommendationRepository(fake_db_session)
         fake_db_session.query.return_value.filter.return_value.all.return_value = []
 
-        result = repository.get_all_recommendations_by_user_id(1)
+        result = repository.get_user_history_recommendations_by_user_id(1)
 
         assert result == []
 
-    def test_get_all_recommendations_by_user_id_multiple(self, fake_db_session):
+    def test_get_user_history_recommendations_by_user_id_multiple(self, fake_db_session):
         """Test getting multiple recommendations for a user."""
         repository = RecommendationRepository(fake_db_session)
 
@@ -111,7 +111,7 @@ class TestRecommendationRepository:
         fake_db_session.query.return_value.filter.return_value.all.return_value = [
             rec1, rec2]
 
-        result = repository.get_all_recommendations_by_user_id(1)
+        result = repository.get_user_history_recommendations_by_user_id(1)
 
         assert len(result) == 2
         assert result[0].name == "Caminhada"
