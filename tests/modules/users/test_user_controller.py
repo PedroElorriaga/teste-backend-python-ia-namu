@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import Mock, MagicMock
 from src.modules.users.controller.user_controller import UserController
+from src.modules.users.dtos.user_dto import UserCreateRequest
 from src.modules.users.repositories.user_repository import UserRepository
 from src.modules.users.models.user_model import User
 from datetime import datetime, timezone
@@ -24,7 +25,7 @@ class TestUserController:
         mock_repository.create_user.return_value = mock_user
 
         controller = UserController(mock_repository)
-        result = controller.create_user(valid_user_data)
+        result = controller.create_user(UserCreateRequest(**valid_user_data))
 
         assert result.id == 1
         assert result.name == valid_user_data["name"]
@@ -43,7 +44,7 @@ class TestUserController:
         mock_repository.create_user.return_value = Mock()
 
         controller = UserController(mock_repository)
-        controller.create_user(valid_user_data)
+        controller.create_user(UserCreateRequest(**valid_user_data))
 
         mock_repository.create_user.assert_called_once()
         call_kwargs = mock_repository.create_user.call_args[1]
@@ -96,7 +97,27 @@ class TestUserController:
             "experience_level": "iniciante"
         }
 
-        controller.create_user(request_data)
+        controller.create_user(UserCreateRequest(**request_data))
+
+        mock_repository.create_user.assert_called_once()
+        call_kwargs = mock_repository.create_user.call_args[1]
+        assert call_kwargs["restrictions"] is None
+
+    def test_create_user_blank_restrictions_becomes_none(self):
+        """Test blank restrictions are normalized before persisting."""
+        mock_repository = Mock(spec=UserRepository)
+        mock_repository.create_user.return_value = Mock(spec=User)
+
+        controller = UserController(mock_repository)
+        controller.create_user(
+            UserCreateRequest(
+                name="Usuario",
+                age=25,
+                goals=["test"],
+                restrictions="   ",
+                experience_level="iniciante",
+            )
+        )
 
         mock_repository.create_user.assert_called_once()
         call_kwargs = mock_repository.create_user.call_args[1]

@@ -134,9 +134,10 @@ class TestUserRouter:
     def test_get_user_recommendations_success(self, monkeypatch, test_client):
         """Test GET /users/{user_id}/recommendations returns recommendation history."""
         monkeypatch.setattr(
-            "src.modules.users.router.user_router.RecommendationController.get_all_recommendations_by_user_id",
+            "src.modules.users.router.user_router.RecommendationController.get_user_history_recommendations_by_user_id",
             lambda self, user_id: [
                 {
+                    "id": 1,
                     "name": "Caminhada",
                     "description": "Caminhada leve de 30 minutos",
                     "duration": 30.0,
@@ -153,13 +154,14 @@ class TestUserRouter:
         data = response.json()
         assert data["message"] == "Histórico de recomendações do usuário 1"
         assert len(data["recommendations"]) == 1
+        assert data["recommendations"][0]["id"] == 1
         assert data["recommendations"][0]["name"] == "Caminhada"
         assert data["recommendations"][0]["duration"] == 30.0
 
     def test_get_user_recommendations_empty(self, monkeypatch, test_client):
         """Test GET /users/{user_id}/recommendations returns empty list when no recommendations."""
         monkeypatch.setattr(
-            "src.modules.users.router.user_router.RecommendationController.get_all_recommendations_by_user_id",
+            "src.modules.users.router.user_router.RecommendationController.get_user_history_recommendations_by_user_id",
             lambda self, user_id: [],
         )
 
@@ -172,9 +174,10 @@ class TestUserRouter:
     def test_get_user_recommendations_multiple(self, monkeypatch, test_client):
         """Test GET /users/{user_id}/recommendations returns multiple recommendations."""
         monkeypatch.setattr(
-            "src.modules.users.router.user_router.RecommendationController.get_all_recommendations_by_user_id",
+            "src.modules.users.router.user_router.RecommendationController.get_user_history_recommendations_by_user_id",
             lambda self, user_id: [
                 {
+                    "id": 1,
                     "name": "Caminhada",
                     "description": "Caminhada leve",
                     "duration": 30.0,
@@ -183,6 +186,7 @@ class TestUserRouter:
                     "precautions": "Nenhuma",
                 },
                 {
+                    "id": 2,
                     "name": "Yoga",
                     "description": "Yoga relaxante",
                     "duration": 45.0,
@@ -203,9 +207,10 @@ class TestUserRouter:
     def test_get_user_recommendations_response_structure(self, monkeypatch, test_client):
         """Test GET /users/{user_id}/recommendations response has correct structure."""
         monkeypatch.setattr(
-            "src.modules.users.router.user_router.RecommendationController.get_all_recommendations_by_user_id",
+            "src.modules.users.router.user_router.RecommendationController.get_user_history_recommendations_by_user_id",
             lambda self, user_id: [
                 {
+                    "id": 5,
                     "name": "Meditação",
                     "description": "Meditação guiada",
                     "duration": 15.0,
@@ -223,12 +228,33 @@ class TestUserRouter:
         assert "message" in data
         assert "recommendations" in data
         rec = data["recommendations"][0]
+        assert "id" in rec
         assert "name" in rec
         assert "description" in rec
         assert "duration" in rec
         assert "category" in rec
         assert "reasoning" in rec
         assert "precautions" in rec
+
+    def test_post_create_user_blank_restrictions_returns_none(self, monkeypatch, test_client, valid_user_data):
+        """Test POST /users normalizes blank restrictions in the returned payload."""
+        user_data = {**valid_user_data, "restrictions": "   "}
+        monkeypatch.setattr(
+            "src.modules.users.router.user_router.UserController.create_user",
+            lambda self, request: SimpleNamespace(
+                id=1,
+                name=user_data["name"],
+                age=user_data["age"],
+                goals=user_data["goals"],
+                restrictions=None,
+                experience_level=user_data["experience_level"],
+            ),
+        )
+
+        response = test_client.post("/users/", json=user_data)
+
+        assert response.status_code == 201
+        assert response.json()["user"]["restrictions"] is None
 
     def test_post_create_user_with_multiple_goals(self, monkeypatch, test_client):
         """Test creating user with multiple goals."""

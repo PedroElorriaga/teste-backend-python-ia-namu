@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 from src.modules.recommendations.controller.recommendation_controller import RecommendationController
+from src.modules.recommendations.dtos.recommendation_dto import RecommendationCreateRequest, RecommendationFeedbackRequest
 from src.modules.recommendations.repositories.recommendation_repository import RecommendationRepository
 
 
@@ -33,7 +34,8 @@ class TestRecommendationController:
 
         controller = RecommendationController(
             mock_repository, ollama_service=mock_service)
-        result = controller.create_recommendations(valid_recommendation_data)
+        result = controller.create_recommendations(
+            RecommendationCreateRequest(**valid_recommendation_data))
 
         assert result is not None
         assert result["activities"][0]["name"] == "Caminhada consciente"
@@ -64,7 +66,8 @@ class TestRecommendationController:
 
         controller = RecommendationController(
             mock_repository, ollama_service=mock_service)
-        result = controller.create_recommendations(valid_recommendation_data)
+        result = controller.create_recommendations(
+            RecommendationCreateRequest(**valid_recommendation_data))
 
         assert result is None
         mock_service.get_recommendations.assert_not_called()
@@ -92,7 +95,8 @@ class TestRecommendationController:
 
         controller = RecommendationController(
             mock_repository, ollama_service=mock_service)
-        result = controller.create_recommendations({"user_id": 1})
+        result = controller.create_recommendations(
+            RecommendationCreateRequest(user_id=1))
 
         assert result is not None
         mock_service.get_recommendations.assert_called_once_with(
@@ -108,13 +112,52 @@ class TestRecommendationController:
         )
         mock_repository.create_recommendations.assert_called_once()
 
-    # ── get_all_recommendations_by_user_id ──
+    def test_create_recommendations_blank_additional_info_becomes_none(self, sample_user):
+        """Test blank additional_info is normalized before calling the service."""
+        mock_repository = Mock(spec=RecommendationRepository)
+        mock_repository.get_user_by_id.return_value = sample_user
+        mock_repository.create_recommendations.return_value = True
+        mock_service = Mock()
+        expected_payload = {
+            "activities": [
+                {
+                    "name": "Respiracao guiada",
+                    "description": "Exercicio respiratorio leve.",
+                    "duration": 10.0,
+                    "category": "Mindfulness",
+                }
+            ],
+            "reasoning": "Atividade adequada para regulacao leve.",
+            "precautions": "Interrompa se houver desconforto.",
+        }
+        mock_service.get_recommendations.return_value = expected_payload
 
-    def test_get_all_recommendations_by_user_id_success(self):
+        controller = RecommendationController(
+            mock_repository, ollama_service=mock_service)
+        result = controller.create_recommendations(
+            RecommendationCreateRequest(user_id=1, additional_info="   "))
+
+        assert result is not None
+        mock_service.get_recommendations.assert_called_once_with(
+            user_profile={
+                "id": 1,
+                "name": sample_user.name,
+                "age": sample_user.age,
+                "goals": sample_user.goals,
+                "restrictions": sample_user.restrictions,
+                "experience_level": sample_user.experience_level,
+            },
+            additional_info=None,
+        )
+
+    # ── get_user_history_recommendations_by_user_id ──
+
+    def test_get_user_history_recommendations_by_user_id_success(self):
         """Test getting recommendations returns list of dicts."""
         mock_repository = Mock(spec=RecommendationRepository)
-        mock_repository.get_all_recommendations_by_user_id.return_value = [
+        mock_repository.get_user_history_recommendations_by_user_id.return_value = [
             SimpleNamespace(
+                id=1,
                 name="Caminhada", description="Caminhada leve",
                 duration=30.0, category="Cardio",
                 reasoning="Perfil do usuario", precautions="Nenhuma",
@@ -122,37 +165,40 @@ class TestRecommendationController:
         ]
 
         controller = RecommendationController(mock_repository)
-        result = controller.get_all_recommendations_by_user_id(1)
+        result = controller.get_user_history_recommendations_by_user_id(1)
 
         assert len(result) == 1
+        assert result[0]["id"] == 1
         assert result[0]["name"] == "Caminhada"
         assert result[0]["duration"] == 30.0
         assert result[0]["category"] == "Cardio"
         assert result[0]["reasoning"] == "Perfil do usuario"
         assert result[0]["precautions"] == "Nenhuma"
-        mock_repository.get_all_recommendations_by_user_id.assert_called_once_with(
+        mock_repository.get_user_history_recommendations_by_user_id.assert_called_once_with(
             1)
 
-    def test_get_all_recommendations_by_user_id_empty(self):
+    def test_get_user_history_recommendations_by_user_id_empty(self):
         """Test getting recommendations for user with no recommendations."""
         mock_repository = Mock(spec=RecommendationRepository)
-        mock_repository.get_all_recommendations_by_user_id.return_value = []
+        mock_repository.get_user_history_recommendations_by_user_id.return_value = []
 
         controller = RecommendationController(mock_repository)
-        result = controller.get_all_recommendations_by_user_id(1)
+        result = controller.get_user_history_recommendations_by_user_id(1)
 
         assert result == []
 
-    def test_get_all_recommendations_by_user_id_multiple(self):
+    def test_get_user_history_recommendations_by_user_id_multiple(self):
         """Test getting multiple recommendations returns correct dicts."""
         mock_repository = Mock(spec=RecommendationRepository)
-        mock_repository.get_all_recommendations_by_user_id.return_value = [
+        mock_repository.get_user_history_recommendations_by_user_id.return_value = [
             SimpleNamespace(
+                id=1,
                 name="Caminhada", description="Caminhada leve",
                 duration=30.0, category="Cardio",
                 reasoning="Perfil", precautions="Nenhuma",
             ),
             SimpleNamespace(
+                id=2,
                 name="Yoga", description="Yoga relaxante",
                 duration=45.0, category="Flexibilidade",
                 reasoning="Estresse", precautions="Evite posturas avançadas",
@@ -160,10 +206,12 @@ class TestRecommendationController:
         ]
 
         controller = RecommendationController(mock_repository)
-        result = controller.get_all_recommendations_by_user_id(1)
+        result = controller.get_user_history_recommendations_by_user_id(1)
 
         assert len(result) == 2
+        assert result[0]["id"] == 1
         assert result[0]["name"] == "Caminhada"
+        assert result[1]["id"] == 2
         assert result[1]["name"] == "Yoga"
 
     # ── create_recommendation_feedback ──
@@ -175,7 +223,7 @@ class TestRecommendationController:
 
         controller = RecommendationController(mock_repository)
         result = controller.create_recommendation_feedback(
-            1, valid_feedback_data)
+            1, RecommendationFeedbackRequest(**valid_feedback_data))
 
         assert result is not None
         assert result.rating == 4
@@ -193,7 +241,7 @@ class TestRecommendationController:
 
         controller = RecommendationController(mock_repository)
         result = controller.create_recommendation_feedback(
-            999, valid_feedback_data)
+            999, RecommendationFeedbackRequest(**valid_feedback_data))
 
         assert result is None
 
