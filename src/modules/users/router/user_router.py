@@ -3,13 +3,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from src.database.postgres_setting import get_db
 from src.modules.users.controller.user_controller import UserController
-from src.modules.users.dtos.user_dto import UserCreateResponse, UserResponse, UserHistoryRecommendationResponse
+from src.modules.users.dtos.user_dto import UserCreateResponse, UserResponse, UserHistoryRecommendationResponse, UserCreateRequest
 from src.modules.users.repositories.user_repository import UserRepository
 from src.modules.recommendations.controller.recommendation_controller import RecommendationController
 from src.modules.recommendations.repositories.recommendation_repository import RecommendationRepository
 
 
 router = APIRouter(prefix="/users", tags=["users"])
+
 
 @router.post(
     "/",
@@ -21,12 +22,13 @@ router = APIRouter(prefix="/users", tags=["users"])
         201: {"description": "Usuario criado com sucesso"},
         422: {"description": "Erro de validacao nos dados de entrada"},
     },
-    )
-async def create_user(request: dict, db: Session = Depends(get_db)):
+)
+async def create_user(request: UserCreateRequest, db: Session = Depends(get_db)):
     try:
         user_repository = UserRepository(db)
         user_controller = UserController(user_repository)
-        user = user_controller.create_user(request)
+        user = user_controller.create_user(
+            UserCreateRequest(**request.model_dump()))
 
         return UserResponse(
             message="Usuario criado",
@@ -40,7 +42,8 @@ async def create_user(request: dict, db: Session = Depends(get_db)):
             )
         )
     except pydantic_core.ValidationError:
-        raise HTTPException(status_code=422, detail="Erro de validação nos dados de entrada")
+        raise HTTPException(
+            status_code=422, detail="Erro de validação nos dados de entrada")
 
 
 @router.get("/{user_id}/recommendations",
@@ -54,10 +57,12 @@ async def create_user(request: dict, db: Session = Depends(get_db)):
                 422: {"description": "Erro de validação nos dados de entrada"},
             }
             )
-async def get_all_user_recommendation(user_id: int, db: Session = Depends(get_db)):
+async def get_user_history_recommendation(user_id: int, db: Session = Depends(get_db)):
     recommendation_repository = RecommendationRepository(db)
-    recommendation_controller = RecommendationController(recommendation_repository)
-    response = recommendation_controller.get_all_recommendations_by_user_id(user_id)
+    recommendation_controller = RecommendationController(
+        recommendation_repository)
+    response = recommendation_controller.get_user_history_recommendations_by_user_id(
+        user_id)
 
     return UserHistoryRecommendationResponse(
         message=f"Histórico de recomendações do usuário {user_id}",

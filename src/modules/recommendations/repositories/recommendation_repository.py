@@ -44,7 +44,7 @@ class RecommendationRepository:
 
         return True
 
-    def get_all_recommendations_by_user_id(self, user_id: int) -> List[Recommendation]:
+    def get_user_history_recommendations_by_user_id(self, user_id: int) -> List[Recommendation]:
         return self.db.query(Recommendation).filter(Recommendation.user_id == user_id).all()
 
     def create_recommendation_feedback(self, recommendation_id: int, rating: int, comment: str) -> Optional[RecommendationFeedback]:
