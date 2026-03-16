@@ -83,6 +83,44 @@ class TestUserRouter:
         data = response.json()
         assert data["user"]["restrictions"] is None
 
+    def test_post_create_user_normalizes_experience_level_typo(self, monkeypatch, test_client):
+        """Test typo in experience_level is normalized to accepted value."""
+        user_data = {
+            "name": "Usuario Com Typo",
+            "age": 31,
+            "goals": ["Condicionamento"],
+            "experience_level": "Intermediaro"
+        }
+        monkeypatch.setattr(
+            "src.modules.users.router.user_router.UserController.create_user",
+            lambda self, request: SimpleNamespace(
+                id=2,
+                name=user_data["name"],
+                age=user_data["age"],
+                goals=user_data["goals"],
+                restrictions=None,
+                experience_level=request.experience_level,
+            ),
+        )
+
+        response = test_client.post("/users/", json=user_data)
+
+        assert response.status_code == 201
+        assert response.json()["user"]["experience_level"] == "intermediário"
+
+    def test_post_create_user_rejects_unknown_experience_level(self, test_client):
+        """Test invalid experience_level returns 422."""
+        invalid_data = {
+            "name": "Usuario",
+            "age": 30,
+            "goals": ["test"],
+            "experience_level": "especialista"
+        }
+
+        response = test_client.post("/users/", json=invalid_data)
+
+        assert response.status_code == 422
+
     def test_post_create_user_invalid_missing_name(self, test_client):
         """Test POST /users with missing name field returns 422."""
         invalid_data = {
