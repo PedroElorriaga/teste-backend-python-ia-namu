@@ -381,18 +381,17 @@ A suíte de testes cobre:
 ### Implementado ✅
 - Cadastro de usuários com validação de perfil
 - Geração de recomendações personalizadas via LLM (Ollama)
-- Persistência em lote de múltiplas atividades por chamada
 - Histórico de recomendações por usuário
 - Endpoint de feedback com persistência via SQL raw (`INSERT ... RETURNING`)
 - Consultas com SQL raw parametrizado (`sqlalchemy.text()`) no repositório
 - Migrações de banco via Alembic
-- Seed de dados com perfis variados
 - Testes automatizados com cobertura de routers, controllers, repositories e service
 - Documentação automática via Swagger (`/docs`)
 
-### O que faria diferente com mais tempo
-- Implementar parse com fallback para respostas inesperadas da IA
-- Adicionar logging estruturado (ex: `structlog`)
-- Implementar cache de recomendações (Redis) para não chamar a LLM repetidamente para o mesmo perfil
-- Ampliar cobertura de testes de integração com banco em memória (SQLite)
-- Adicionar pipeline simples de processamento de feedbacks para refinamento de prompts
+### Onde Utilizei IA para me auxiliar 🤖
+- Testes (Por conta do curto período, preferi focar na construção da API e conexão com o LLM -> OBS mesmo assim acompanhei quais mudanças e testes foram cobertos e porque)
+- Criação desta documentação (Para facilidade e eficiência)
+- Arquivos de migração do alembic (Por receio de perder informações ou erros na hora de migrar, decidi usar a IA como um braço direito na concepção desses arquivos)
+- Docker compose (Utilizei para otimizar meu tempo na hora da criação dos serviços e download do LLM model)
+- CI (Ocorreram alguns erros inesperados no Actions do GitHub, então utilizei a IA para debugar o problema)
+- System Content (Na hora de definir passei parametros que eu achava importante e pedi para a IA alguns pontos para mim)
