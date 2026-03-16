@@ -394,4 +394,4 @@ A suíte de testes cobre:
 - Arquivos de migração do alembic (Por receio de perder informações ou erros na hora de migrar, decidi usar a IA como um braço direito na concepção desses arquivos)
 - Docker compose (Utilizei para otimizar meu tempo na hora da criação dos serviços e download do LLM model)
 - CI (Ocorreram alguns erros inesperados no Actions do GitHub, então utilizei a IA para debugar o problema)
-- System Content (Na hora de definir passei parametros que eu achava importante e pedi para a IA alguns pontos para mim)
+- System Content (Na hora de definir passei parametros que eu achava importante e pedi para a IA refinar alguns pontos para mim)
