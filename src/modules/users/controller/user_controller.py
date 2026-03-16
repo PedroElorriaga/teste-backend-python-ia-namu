@@ -6,15 +6,17 @@ class UserController:
     def __init__(self, user_repository: UserRepository):
         self.user_repository = user_repository
 
-    def create_user(self, request: dict) -> dict:
-        user_dto = UserCreateRequest(**request)
+    def create_user(self, request: UserCreateRequest) -> dict:
+
+        if request.restrictions and request.restrictions.strip() == "":
+            request.restrictions = None
 
         return self.user_repository.create_user(
-            name=user_dto.name,
-            age=user_dto.age,
-            goals=user_dto.goals,
-            restrictions=user_dto.restrictions,
-            experience_level=user_dto.experience_level
+            name=request.name,
+            age=request.age,
+            goals=request.goals,
+            restrictions=request.restrictions,
+            experience_level=request.experience_level
         )
 
     def get_all_users(self) -> dict:
